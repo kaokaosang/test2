@@ -45,17 +45,36 @@
       background: white; border-radius: 12px; padding: 16px;
       margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    textarea, input[type="text"], input[type="number"] {
+    input[type="number"], input[type="text"] {
       width: 100%; border: 1px solid #ddd; border-radius: 8px;
       padding: 10px; font-size: 1rem; margin-top: 8px;
     }
     .btn {
       background: #4A90D9; color: white; border: none; border-radius: 8px;
-      padding: 10px 16px; font-size: 1rem; margin-top: 8px;
+      padding: 10px 16px; font-size: 1rem; margin-top: 8px; cursor: pointer;
     }
-    .photo-list img {
-      width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
-      margin-right: 8px; margin-bottom: 8px;
+    .btn-small {
+      padding: 6px 12px; font-size: 0.9rem; margin: 4px 2px;
+    }
+    /* 富文本工具栏 */
+    .editor-toolbar {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+      align-items: center;
+    }
+    .editor-toolbar button, .editor-toolbar .color-label {
+      background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px;
+      padding: 6px 10px; font-size: 0.9rem; cursor: pointer;
+    }
+    .color-label {
+      display: flex; align-items: center; gap: 4px;
+    }
+    #editor {
+      border: 1px solid #ddd; border-radius: 8px; padding: 12px;
+      min-height: 150px; background: white; font-size: 1rem;
+      outline: none; margin-bottom: 8px;
+    }
+    #editor img {
+      max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0;
     }
     .finance-row {
       display: flex; gap: 8px; margin-top: 8px;
@@ -65,6 +84,13 @@
     }
     .meal-entry {
       display: flex; gap: 8px; align-items: center; margin-top: 8px;
+    }
+    .stat-box {
+      background: #e8f0fe; border-radius: 12px; padding: 12px;
+      margin: 12px 0; font-weight: bold; text-align: center;
+    }
+    canvas {
+      width: 100%; max-width: 400px; display: block; margin: 12px auto;
     }
     .history-date {
       margin: 16px 0 8px; font-weight: bold; color: #4A90D9;
@@ -87,30 +113,43 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('diary')">📝 日记/笔记</div>
-    <div class="tab" onclick="switchTab('photos')">🖼️ 照片</div>
+    <div class="tab active" onclick="switchTab('diary')">📝 日记</div>
     <div class="tab" onclick="switchTab('finance')">💰 记账</div>
     <div class="tab" onclick="switchTab('weight')">⚖️ 体重</div>
     <div class="tab" onclick="switchTab('history')">📋 历史</div>
   </div>
 
+  <!-- 日记面板 -->
   <div id="diaryPanel" class="panel active">
     <div class="card">
-      <textarea id="diaryText" rows="6" placeholder="写一写今天的收获、想法……"></textarea>
+      <div class="editor-toolbar">
+        <button onclick="formatDoc('bold')" title="加粗"><b>B</b></button>
+        <button onclick="formatDoc('italic')" title="斜体"><i>I</i></button>
+        <button onclick="formatDoc('underline')" title="下划线"><u>U</u></button>
+        <label class="color-label">
+          <span style="font-size:0.8rem;">字色</span>
+          <input type="color" id="textColor" value="#000000" onchange="setTextColor()">
+        </label>
+        <label class="color-label">
+          <span style="font-size:0.8rem;">荧光</span>
+          <input type="color" id="bgColor" value="#ffff00" onchange="setBgColor()">
+        </label>
+        <button onclick="insertPhoto()" title="插入照片">🖼️ 照片</button>
+      </div>
+      <div id="editor" contenteditable="true" placeholder="写一写今天的收获…"></div>
       <button class="btn" onclick="saveDiary()">💾 保存日记</button>
     </div>
-    <div class="card" id="diaryPreview" style="display:none;"></div>
   </div>
 
-  <div id="photosPanel" class="panel">
-    <div class="card">
-      <input type="file" accept="image/*" capture="environment" id="photoInput" multiple onchange="addPhotos()" />
-      <div id="photoContainer" class="photo-list"></div>
-    </div>
-  </div>
-
+  <!-- 记账面板 -->
   <div id="financePanel" class="panel">
     <div class="card">
+      <div class="stat-box">
+        💰 总存款：<span id="totalSavings">0.00</span> 元
+      </div>
+      <div style="margin-bottom:8px;">
+        <input type="number" id="initialSavings" placeholder="设置原始积累（元）" step="0.01" onchange="saveInitialSavings()" />
+      </div>
       <div class="finance-row">
         <input type="number" id="savedMoney" placeholder="今天存了多少钱" step="0.01" />
         <input type="number" id="savedMoney2" placeholder="省下多少钱" step="0.01" />
@@ -127,17 +166,21 @@
       </div>
       <button class="btn" onclick="saveFinance()">💾 保存账目</button>
     </div>
-    <div class="card" id="financePreview" style="display:none;"></div>
   </div>
 
+  <!-- 体重面板 -->
   <div id="weightPanel" class="panel">
     <div class="card">
-      <input type="number" id="weightInput" placeholder="今日体重 (kg)" step="0.1" />
+      <input type="number" id="targetWeight" placeholder="目标体重 (kg)" step="0.1" onchange="saveTargetWeight()" />
+      <input type="number" id="weightInput" placeholder="今日体重 (kg)" step="0.1" style="margin-top:12px;" />
       <button class="btn" onclick="saveWeight()">💾 记录体重</button>
     </div>
-    <div class="card" id="weightPreview" style="display:none;"></div>
+    <div class="card">
+      <canvas id="weightChart" width="300" height="200"></canvas>
+    </div>
   </div>
 
+  <!-- 历史面板 -->
   <div id="historyPanel" class="panel">
     <div id="historyContent"></div>
   </div>
