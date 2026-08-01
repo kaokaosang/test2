@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>我的日常记录</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#4A90D9" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa; color: #333; padding-bottom: 20px;
+    }
+    .header {
+      background: #4A90D9; color: white; padding: 16px;
+      text-align: center; position: sticky; top: 0; z-index: 10;
+    }
+    .date-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 1.3rem; margin-top: 8px;
+    }
+    .date-nav button {
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      font-size: 1.5rem; padding: 4px 12px; border-radius: 8px;
+    }
+    .tabs {
+      display: flex; background: white; border-bottom: 1px solid #ddd;
+      position: sticky; top: 108px; z-index: 10;
+    }
+    .tab {
+      flex: 1; text-align: center; padding: 12px 0; font-size: 0.9rem;
+      border-bottom: 3px solid transparent; transition: 0.2s;
+    }
+    .tab.active {
+      border-bottom-color: #4A90D9; color: #4A90D9; font-weight: bold;
+    }
+    .panel {
+      padding: 16px; display: none;
+    }
+    .panel.active { display: block; }
+    .card {
+      background: white; border-radius: 12px; padding: 16px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    textarea, input[type="text"], input[type="number"] {
+      width: 100%; border: 1px solid #ddd; border-radius: 8px;
+      padding: 10px; font-size: 1rem; margin-top: 8px;
+    }
+    .btn {
+      background: #4A90D9; color: white; border: none; border-radius: 8px;
+      padding: 10px 16px; font-size: 1rem; margin-top: 8px;
+    }
+    .photo-list img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+      margin-right: 8px; margin-bottom: 8px;
+    }
+    .finance-row {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .finance-row input {
+      flex: 1;
+    }
+    .meal-entry {
+      display: flex; gap: 8px; align-items: center; margin-top: 8px;
+    }
+    .history-date {
+      margin: 16px 0 8px; font-weight: bold; color: #4A90D9;
+    }
+    .history-item {
+      background: #eef2f7; border-radius: 8px; padding: 10px;
+      margin-bottom: 8px; font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3>📒 我的日常</h3>
+    <div class="date-nav">
+      <button onclick="changeDate(-1)">◀</button>
+      <span id="dateDisplay"></span>
+      <button onclick="changeDate(1)">▶</button>
+      <button onclick="goToToday()">📅</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('diary')">📝 日记/笔记</div>
+    <div class="tab" onclick="switchTab('photos')">🖼️ 照片</div>
+    <div class="tab" onclick="switchTab('finance')">💰 记账</div>
+    <div class="tab" onclick="switchTab('weight')">⚖️ 体重</div>
+    <div class="tab" onclick="switchTab('history')">📋 历史</div>
+  </div>
+
+  <div id="diaryPanel" class="panel active">
+    <div class="card">
+      <textarea id="diaryText" rows="6" placeholder="写一写今天的收获、想法……"></textarea>
+      <button class="btn" onclick="saveDiary()">💾 保存日记</button>
+    </div>
+    <div class="card" id="diaryPreview" style="display:none;"></div>
+  </div>
+
+  <div id="photosPanel" class="panel">
+    <div class="card">
+      <input type="file" accept="image/*" capture="environment" id="photoInput" multiple onchange="addPhotos()" />
+      <div id="photoContainer" class="photo-list"></div>
+    </div>
+  </div>
+
+  <div id="financePanel" class="panel">
+    <div class="card">
+      <div class="finance-row">
+        <input type="number" id="savedMoney" placeholder="今天存了多少钱" step="0.01" />
+        <input type="number" id="savedMoney2" placeholder="省下多少钱" step="0.01" />
+      </div>
+      <div style="margin:12px 0; font-weight:bold;">🍽️ 一日三餐</div>
+      <div class="meal-entry">
+        <span>早餐</span><input type="number" id="breakfastCost" placeholder="花费" step="0.01" />
+      </div>
+      <div class="meal-entry">
+        <span>午餐</span><input type="number" id="lunchCost" placeholder="花费" step="0.01" />
+      </div>
+      <div class="meal-entry">
+        <span>晚餐</span><input type="number" id="dinnerCost" placeholder="花费" step="0.01" />
+      </div>
+      <button class="btn" onclick="saveFinance()">💾 保存账目</button>
+    </div>
+    <div class="card" id="financePreview" style="display:none;"></div>
+  </div>
+
+  <div id="weightPanel" class="panel">
+    <div class="card">
+      <input type="number" id="weightInput" placeholder="今日体重 (kg)" step="0.1" />
+      <button class="btn" onclick="saveWeight()">💾 记录体重</button>
+    </div>
+    <div class="card" id="weightPreview" style="display:none;"></div>
+  </div>
+
+  <div id="historyPanel" class="panel">
+    <div id="historyContent"></div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
